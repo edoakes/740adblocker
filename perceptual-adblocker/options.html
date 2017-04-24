@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Perceptual Adblocker Options</title>
+  <style>
+    body: { padding: 30px; }
+  </style>
+</head>
+
+<body>
+  <div id="facebook">
+    <h1>Facebook:</h1>
+    <div>
+      Sidebar tolerance:<br>
+      <input id="fbsidebar" type="range"/><br>
+      Newsfeed tolerance:<br>
+      <input id="fbnewsfeed" type="range"/><br>
+    </div>
+  </div>
+  <div id="actolerance">
+    <h1>Adchoices:</h1>
+    Tolerance:<br>
+    <input id="actolerance" type="range"/><br>
+  </div>
+  <div>
+    <input id="remove" type="checkbox"/> Remove ads<br>
+  </div><br>
+
+  <div id="status"></div>
+  <button id="save">Save</button>
+  <button id="defaults">Restore Defaults</button>
+
+  <script src="options.js"></script>
+</body>
+</html>

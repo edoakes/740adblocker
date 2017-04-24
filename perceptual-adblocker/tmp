@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Adblocker Options</title>
+
+    <style>
+      body {
+      }
+      #content {
+        width: 350px;
+        word-wrap: break-word;
+        text-align: center;
+      }
+    </style>
+
+  </head>
+  <body>
+    <div id="facebook">
+      <h1>Facebook:</h1>
+      <div>
+        Sidebar tolerance:<br>
+        <input id="fbsidebar" type="range"/><br>
+        Newsfeed tolerance:<br>
+        <input id="fbnewsfeed" type="range"/><br>
+        <input type="checkbox" id="fbremove"/> Remove ads<br>
+      </div>
+    </div>
+    <div id="adchoices">
+      <h1>Adchoices:</h1>
+      Tolerance:<br>
+      <input id="adchoices" type="range"/><br>
+      <input type="checkbox" id="fbremove"/> Remove ads<br>
+    </div>
+  </body>
+</html>

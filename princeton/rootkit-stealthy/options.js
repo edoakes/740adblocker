@@ -1,7 +1,7 @@
 // Saves options to chrome.storage
 function save_options() {
   var adTolerance = document.getElementById('adTolerance').value;
-  var blockOnSize = document.getElementById('blockOnSize').value;
+  var blockOnSize = document.getElementById('blockOnSize').checked;
   var blockWidth = document.getElementById('blockWidth').value;
   var blockHeight = document.getElementById('blockHeight').value;
 

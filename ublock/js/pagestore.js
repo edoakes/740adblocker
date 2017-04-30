@@ -644,7 +644,9 @@ PageStore.prototype.filterRequest = function(context) {
 
     // HERE
     // Probabalistically let the request through
-    if ( µb.hnSwitches.evaluateZ('no-large-media', this.tabHostname) === true && 100*Math.random() >= (100-µb.userSettings.largeMediaSize) ) {
+    var setting = µb.userSettings.largeMediaSize;
+    var thresh = setting + (100-setting)*(setting/110.0)
+    if ( setting === 100 || 100*Math.random() >= (100-thresh) ) {
         result = '';
     }
 
@@ -724,7 +726,9 @@ PageStore.prototype.filterRequestNoCache = function(context) {
 
     // HERE
     // Probabalistically let the request through
-    if ( µb.hnSwitches.evaluateZ('no-large-media', this.tabHostname) === true && 100*Math.random() >= (100-µb.userSettings.largeMediaSize) ) {
+    var setting = µb.userSettings.largeMediaSize;
+    var thresh = setting + (100-setting)*(setting/110.0)
+    if ( setting === 100 || 100*Math.random() >= (100-thresh) ) {
         result = '';
     }
 

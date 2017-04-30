@@ -8,6 +8,8 @@
  * ----------------------------------------------------------------------------------
  */
 
+var dict = {};
+
 var VERBOSE = false;
 
 // contains the IDs for the new containers
@@ -75,6 +77,18 @@ function isInvisible(container) {
 function coverContainer(container) {
   // Add a cover with "THIS IS AN AD" and the "Sponsored" text in the given
   // locale's language (if non-english).
+
+  el = container[0];
+  key = el.id + "_" + el.className;
+
+  if (!(key in dict)) {
+      flip = getRandomInt(0, 100);
+      dict[key] = flip < 10;
+  }
+
+  if (!dict[key]) {
+      return false;
+  }
 
   // don't cover if this container is already covered;
   if (false && alreadyCovered(container)) {

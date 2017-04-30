@@ -8,7 +8,7 @@
  * ----------------------------------------------------------------------------------
  */
 
-var dict = {};
+var block_el = {};
 
 var VERBOSE = false;
 
@@ -73,20 +73,21 @@ function isInvisible(container) {
   return detectInvisible(container);
 }
 
-// given a list of divs, cover all of them with proper containers.
-function coverContainer(container) {
+function getKey(container) {
+  let el = container[0];
+  let key = el.id + "_" + el.className;
+
+  return key;
+}
+
+
+function doCovering(container) {
   // Add a cover with "THIS IS AN AD" and the "Sponsored" text in the given
   // locale's language (if non-english).
 
-  el = container[0];
-  key = el.id + "_" + el.className;
+  let key = getKey(container);
 
-  if (!(key in dict)) {
-      flip = getRandomInt(0, 100);
-      dict[key] = flip < 10;
-  }
-
-  if (!dict[key]) {
+  if (block_el[key] === false) { // i.e. don't block this element
       return false;
   }
 
@@ -106,14 +107,14 @@ function coverContainer(container) {
   var y = "0";
   var offset = container.offset();
   var id = "WSA_cover_" + getRandomInt(0, Number.MAX_SAFE_INTEGER);
-  var prepend = "<div class=\"WSA_adBlockerCover\" id=\"" + id + "\" style=\"height: " + h + ";position: absolute;top: " + y + ";left: " + x + ";overflow-y:hidden;width: " + w + ";background-color: rgba(255, 255, 255, 0.7);z-index: 100; visibility: visible;\">";
+  var prepend = "<div class=\"WSA_adBlockerCover\" id=\"" + id + "\" style=\"height: " + h + ";position: absolute;top: " + y + ";left: " + x + ";overflow-y:hidden;width: " + w + ";background-color: rgba(34, 139, 34, 1.0);z-index: 100; visibility: visible;\">";
   prepend += "<div class=\"WSA_closeButton\" style=\"position: absolute; right: 5px; top: 5px; cursor: pointer; padding: 0px 3px; border: 1px solid black; border-radius: 5px;\">";
   prepend += "<strong>";
   prepend += "X";
   prepend += "</strong>";
   prepend += "</div>";
   prepend += "<div style=\"width: 100%;text-align:center;\">";
-  prepend += "<span style=\"color: black; font-size:60px;\">";
+  prepend += "<span style=\"color: white; font-size:60px;\">";
   prepend += "THIS IS AN AD";
   prepend += "</span>";
   prepend += "</div>";
@@ -151,6 +152,23 @@ function coverContainer(container) {
     cover.css("visibility", "hidden");
     clearInterval(intervalID);
   });
+}
+
+// given a list of divs, cover all of them with proper containers.
+function coverContainer(container) {
+  let key = getKey(container);
+
+  if (!(key in block_el)) {
+    chrome.storage.sync.get({
+      adTolerance: 0,
+    }, function(items) {
+      let flip = getRandomInt(0, 100);
+      block_el[key] = flip < (100-items.adTolerance);
+      doCovering(container);
+    });
+  } else {
+    doCovering(container);
+  }
 }
 
 // add "body" to the start of every selector

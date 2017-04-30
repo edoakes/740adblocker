@@ -6,7 +6,7 @@
   "version": "0.1.0",
   "browser_action": {
     "default_icon": "icon24.png",
-    "default_popup": "popup.html",
+    "default_popup": "options.html",
     "default_title": "Stealthy Adblocker"
   },
   "icons": {
@@ -32,6 +32,7 @@
   "permissions": [
     "webRequest",
     "webRequestBlocking",
-    "*://*/"
+    "*://*/",
+    "storage"
   ]
 }

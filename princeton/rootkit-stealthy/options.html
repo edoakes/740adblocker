@@ -7,19 +7,14 @@
             Ad Tolerance:<br>
             <input id="adTolerance" type="range"/><br>
         </div>
-        <!--
-        <select id="color">
-            <option value="red">red</option>
-            <option value="green">green</option>
-            <option value="blue">blue</option>
-            <option value="yellow">yellow</option>
-        </select>
 
-        <label>
-            <input type="checkbox" id="like">
-            I like colors.
-        </label>
-        -->
+        <div>
+
+            <input type="checkbox" id="blockOnSize">
+            Block ads that are bigger than (0 == &infin;):<br>
+            Width: <input type="number" id="blockWidth" min="0" max="9999"><br>
+            Height: <input type="number" id="blockHeight" min="0" max="9999">
+        </div>
 
         <div id="status"></div>
         <button id="save">Save</button>

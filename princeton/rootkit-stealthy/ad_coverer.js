@@ -81,6 +81,14 @@ function getKey(container) {
 }
 
 
+function getHeight(container) {
+  return Math.max(container.outerHeight(), container.prop("scrollHeight"), container[0].clientHeight);
+}
+
+function getWidth(container) {
+  return container.outerWidth();
+}
+
 function doCovering(container) {
   // Add a cover with "THIS IS AN AD" and the "Sponsored" text in the given
   // locale's language (if non-english).
@@ -100,9 +108,9 @@ function doCovering(container) {
     return false;
   }
 
-  var height = Math.max(container.outerHeight(), container.prop("scrollHeight"), container[0].clientHeight);
+  var height = getHeight(container);
   var h = height + "px";
-  var w = container.outerWidth() + "px";
+  var w = getWidth(container) + "px";
   var x = "0";
   var y = "0";
   var offset = container.offset();
@@ -160,10 +168,21 @@ function coverContainer(container) {
 
   if (!(key in block_el)) {
     chrome.storage.sync.get({
-      adTolerance: 0,
+      adTolerance: 100,
+      blockOnSize: false,
+      blockWidth: 0,
+      blockHeight: 0,
     }, function(items) {
       let flip = getRandomInt(0, 100);
-      block_el[key] = flip < (100-items.adTolerance);
+
+      if (items.blockOnSize &&
+          ((items.blockHeight > 0 && getHeight(container) > items.blockHeight) ||
+           (items.blockWidth > 0 && getWidth(container) > items.blockWidth))) {
+        block_el[key] = true;
+      } else {
+        block_el[key] = flip < (100-items.adTolerance);
+      }
+      
       doCovering(container);
     });
   } else {

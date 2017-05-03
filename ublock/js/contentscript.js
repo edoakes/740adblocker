@@ -1018,10 +1018,12 @@ vAPI.domCollapser = (function() {
 
     // Because a while ago I have observed constructors are faster than
     // literal object instanciations.
-    var RoundtripRequest = function(tag, attr, url) {
+    var RoundtripRequest = function(tag, attr, url, x, y) {
         this.tag = tag;
         this.attr = attr;
         this.url = url;
+        this.x = x;
+        this.y = y;
         this.collapse = false;
     };
 
@@ -1150,7 +1152,7 @@ vAPI.domCollapser = (function() {
             entry = pendingRequests[key];
         if ( entry === undefined ) {
             pendingRequests[key] = target;
-            roundtripRequests.push(new RoundtripRequest(tag, prop, src));
+            roundtripRequests.push(new RoundtripRequest(tag, prop, src), target['x'], target['y]);
         } else if ( Array.isArray(entry) ) {
             entry.push(target);
         } else {

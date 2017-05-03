@@ -45,6 +45,8 @@ var µb = µBlock;
 // To mitigate memory churning
 var netFilteringResultCacheEntryJunkyard = [];
 var netFilteringResultCacheEntryJunkyardMax = 200;
+var domCacheEntryJunkyard = [];
+var domCacheEntryJunkyardMax = 200;
 
 /******************************************************************************/
 
@@ -52,11 +54,21 @@ var NetFilteringResultCacheEntry = function(result, type) {
     this.init(result, type);
 };
 
+var DomCacheEntry = function(result) {
+    this.init(result);
+};
+
 /******************************************************************************/
 
 NetFilteringResultCacheEntry.prototype.init = function(result, type) {
     this.result = result;
     this.type = type;
+    this.time = Date.now();
+    return this;
+};
+
+DomCacheEntry.prototype.init = function(result) {
+    this.result = result;
     this.time = Date.now();
     return this;
 };
@@ -70,6 +82,13 @@ NetFilteringResultCacheEntry.prototype.dispose = function() {
     }
 };
 
+DomCacheEntry.prototype.dispose = function() {
+    this.result = '';
+    if ( domCacheEntryJunkyard.length < domCacheEntryJunkyardMax ) {
+        domCacheEntryJunkyard.push(this);
+    }
+};
+
 /******************************************************************************/
 
 NetFilteringResultCacheEntry.factory = function(result, type) {
@@ -79,6 +98,13 @@ NetFilteringResultCacheEntry.factory = function(result, type) {
     return new NetFilteringResultCacheEntry(result, type);
 };
 
+DomCacheEntry.factory = function(result) {
+    if ( domCacheEntryJunkyard.length ) {
+        return domCacheEntryJunkyard.pop().init(result);
+    }
+    return new DomCacheEntry(result);
+};
+
 /******************************************************************************/
 /******************************************************************************/
 
@@ -86,9 +112,16 @@ NetFilteringResultCacheEntry.factory = function(result, type) {
 var netFilteringCacheJunkyard = [];
 var netFilteringCacheJunkyardMax = 10;
 
+var domCacheJunkyard = [];
+var domCacheJunkyardMax = 10;
+
 /******************************************************************************/
 
 var NetFilteringResultCache = function() {
+    this.init();
+};
+
+var DomResultCache = function() {
     this.init();
 };
 
@@ -98,6 +131,16 @@ NetFilteringResultCache.factory = function() {
     var entry = netFilteringCacheJunkyard.pop();
     if ( entry === undefined ) {
         entry = new NetFilteringResultCache();
+    } else {
+        entry.init();
+    }
+    return entry;
+};
+
+DomResultCache.factory = function() {
+    var entry = domCacheJunkyard.pop();
+    if ( entry === undefined ) {
+        entry = new DomResultCache();
     } else {
         entry.init();
     }
@@ -114,6 +157,14 @@ NetFilteringResultCache.prototype.init = function() {
     this.boundPruneAsyncCallback = this.pruneAsyncCallback.bind(this);
 };
 
+DomResultCache.prototype.init = function() {
+    this.positions = Object.create(null);
+    this.count = 0;
+    this.shelfLife = 15 * 1000;
+    this.timer = null;
+    this.boundPruneAsyncCallback = this.pruneAsyncCallback.bind(this);
+};
+
 /******************************************************************************/
 
 NetFilteringResultCache.prototype.dispose = function() {
@@ -121,6 +172,15 @@ NetFilteringResultCache.prototype.dispose = function() {
     this.boundPruneAsyncCallback = null;
     if ( netFilteringCacheJunkyard.length < netFilteringCacheJunkyardMax ) {
         netFilteringCacheJunkyard.push(this);
+    }
+    return null;
+};
+
+DomResultCache.prototype.dispose = function() {
+    this.empty();
+    this.boundPruneAsyncCallback = null;
+    if ( domCacheJunkyard.length < domCacheJunkyardMax ) {
+        domCacheJunkyard.push(this);
     }
     return null;
 };
@@ -145,6 +205,21 @@ NetFilteringResultCache.prototype.add = function(context, result) {
     this.count += 1;
 };
 
+NetFilteringResultCache.prototype.add = function(context, result) {
+    var key = context.X + ' ' + context.Y;
+        entry = this.urls[key];
+    if ( entry !== undefined ) {
+        entry.result = result;
+        entry.time = Date.now();
+        return;
+    }
+    this.positions[key] = DomCacheEntry.factory(result);
+    if ( this.count === 0 ) {
+        this.pruneAsync();
+    }
+    this.count += 1;
+};
+
 /******************************************************************************/
 
 NetFilteringResultCache.prototype.empty = function() {
@@ -159,10 +234,22 @@ NetFilteringResultCache.prototype.empty = function() {
     }
 };
 
+DomResultCache.prototype.empty = function() {
+    for ( var key in this.positions ) {
+        this.positions[key].dispose();
+    }
+    this.positions = Object.create(null);
+    this.count = 0;
+    if ( this.timer !== null ) {
+        clearTimeout(this.timer);
+        this.timer = null;
+    }
+};
+
 /******************************************************************************/
 
-NetFilteringResultCache.prototype.compareEntries = function(a, b) {
-    return this.urls[b].time - this.urls[a].time;
+DomResultCache.prototype.compareEntries = function(a, b) {
+    return this.positions[b].time - this.positions[a].time;
 };
 
 /******************************************************************************/
@@ -187,6 +274,26 @@ NetFilteringResultCache.prototype.prune = function() {
     }
 };
 
+DomResultCache.prototype.prune = function() {
+    var keys = Object.keys(this.positions).sort(this.compareEntries.bind(this));
+    var obsolete = Date.now() - this.shelfLife;
+    var key, entry;
+    var i = keys.length;
+    while ( i-- ) {
+        key = keys[i];
+        entry = this.positions[key];
+        if ( entry.time > obsolete ) {
+            break;
+        }
+        entry.dispose();
+        delete this.positions[key];
+    }
+    this.count -= positions.length - i - 1;
+    if ( this.count > 0 ) {
+        this.pruneAsync();
+    }
+};
+
 // https://www.youtube.com/watch?v=hcVpbsDyOhM
 
 /******************************************************************************/
@@ -202,10 +309,25 @@ NetFilteringResultCache.prototype.pruneAsyncCallback = function() {
     this.prune();
 };
 
+DomResultCache.prototype.pruneAsync = function() {
+    if ( this.timer === null ) {
+        this.timer = vAPI.setTimeout(this.boundPruneAsyncCallback, this.shelfLife * 2);
+    }
+};
+
+DomResultCache.prototype.pruneAsyncCallback = function() {
+    this.timer = null;
+    this.prune();
+};
+
 /******************************************************************************/
 
 NetFilteringResultCache.prototype.lookup = function(context) {
     return this.urls[context.requestType + ' ' + context.requestURL] || undefined;
+};
+
+DomResultCache.prototype.lookup = function(context) {
+    return this.positions[context.X + ' ' + context.Y] || undefined;
 };
 
 /******************************************************************************/
@@ -313,6 +435,7 @@ PageStore.prototype.init = function(tabId) {
     this.largeMediaCount = 0;
     this.largeMediaTimer = null;
     this.netFilteringCache = NetFilteringResultCache.factory();
+    this.domCache = DomResultCache.factory();
     this.internalRedirectionCount = 0;
 
     this.noCosmeticFiltering = µb.hnSwitches.evaluateZ('no-cosmetic-filtering', tabContext.rootHostname) === true;
@@ -383,6 +506,7 @@ PageStore.prototype.reuse = function(context) {
     }
     this.disposeFrameStores();
     this.netFilteringCache = this.netFilteringCache.dispose();
+    this.domCache = this.domCache.dispose();
     this.init(this.tabId);
     return this;
 };
@@ -403,6 +527,7 @@ PageStore.prototype.dispose = function() {
     }
     this.disposeFrameStores();
     this.netFilteringCache = this.netFilteringCache.dispose();
+    this.domCache = this.domCache.dispose();
     if ( this.journalTimer !== null ) {
         clearTimeout(this.journalTimer);
         this.journalTimer = null;
@@ -495,6 +620,7 @@ PageStore.prototype.getGenericCosmeticFilteringSwitch = function() {
 PageStore.prototype.toggleNetFilteringSwitch = function(url, scope, state) {
     µb.toggleNetFilteringSwitch(url, scope, state);
     this.netFilteringCache.empty();
+    this.domFilteringCache.empty();
 };
 
 /******************************************************************************/
@@ -644,13 +770,24 @@ PageStore.prototype.filterRequest = function(context) {
 
     // HERE
     // Probabalistically let the request through
+    var entry = this.domCache.lookup(context);
+    if ( entry !== undefined ) {
+        return entry.result;
+    }
+
+    /*
     var setting = µb.userSettings.largeMediaSize;
     var thresh = setting + (100-setting)*(setting/110.0)
     if ( setting === 100 || 100*Math.random() >= (100-thresh) ) {
         result = '';
     }
+    */
+    if ( 100*Math.random() >= (100-µb.userSettings.largeMediaSize ) ) {
+        result = '';
+    }
 
     this.netFilteringCache.add(context, result);
+    this.domCache.add(context, result);
 
     return result;
 };
@@ -726,11 +863,24 @@ PageStore.prototype.filterRequestNoCache = function(context) {
 
     // HERE
     // Probabalistically let the request through
+    var entry = this.domCache.lookup(context);
+    if ( entry !== undefined ) {
+        return entry.result;
+    }
+
+    /*
     var setting = µb.userSettings.largeMediaSize;
     var thresh = setting + (100-setting)*(setting/110.0)
     if ( setting === 100 || 100*Math.random() >= (100-thresh) ) {
         result = '';
     }
+    */
+    if ( 100*Math.random() >= (100-µb.userSettings.largeMediaSize ) ) {
+        result = '';
+    }
+
+    this.netFilteringCache.add(context, result);
+    this.domCache.add(context, result);
 
     return result;
 };

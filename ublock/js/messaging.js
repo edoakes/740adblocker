@@ -499,6 +499,8 @@ var filterRequests = function(pageStore, details) {
         context.requestURL = punycodeURL(request.url);
         context.requestHostname = hostnameFromURI(context.requestURL);
         context.requestType = tagNameToRequestTypeMap[request.tag];
+        context.requestX = details.X;
+        context.requestY = details.Y;
         r = pageStore.filterRequest(context);
         if ( typeof r !== 'string' || r.charCodeAt(1) !== 98 /* 'b' */ ) {
             continue;

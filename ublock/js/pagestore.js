@@ -206,7 +206,8 @@ NetFilteringResultCache.prototype.add = function(context, result) {
 };
 
 DomResultCache.prototype.add = function(context, result) {
-    var key = context.X + ' ' + context.Y,
+    //var key = context.X + ' ' + context.Y,
+    var key = context.frame,
         entry = this.positions[key];
     if ( entry !== undefined ) {
         entry.result = result;
@@ -288,7 +289,7 @@ DomResultCache.prototype.prune = function() {
         entry.dispose();
         delete this.positions[key];
     }
-    this.count -= positions.length - i - 1;
+    this.count -= this.positions.length - i - 1;
     if ( this.count > 0 ) {
         this.pruneAsync();
     }
@@ -327,7 +328,8 @@ NetFilteringResultCache.prototype.lookup = function(context) {
 };
 
 DomResultCache.prototype.lookup = function(context) {
-    return this.positions[context.X + ' ' + context.Y] || undefined;
+    //return this.positions[context.X + ' ' + context.Y] || undefined;
+    return this.positions[context.frame] || undefined;
 };
 
 /******************************************************************************/

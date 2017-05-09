@@ -123,6 +123,7 @@ var onBeforeRequest = function(details) {
     requestContext.requestURL = requestURL;
     requestContext.requestHostname = µb.URI.hostnameFromURI(requestURL);
     requestContext.requestType = requestType;
+    requestContext.frame = details.frameId;
 
     var result = pageStore.filterRequest(requestContext);
 

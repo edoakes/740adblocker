@@ -205,9 +205,9 @@ NetFilteringResultCache.prototype.add = function(context, result) {
     this.count += 1;
 };
 
-NetFilteringResultCache.prototype.add = function(context, result) {
-    var key = context.X + ' ' + context.Y;
-        entry = this.urls[key];
+DomResultCache.prototype.add = function(context, result) {
+    var key = context.X + ' ' + context.Y,
+        entry = this.positions[key];
     if ( entry !== undefined ) {
         entry.result = result;
         entry.time = Date.now();
@@ -772,22 +772,17 @@ PageStore.prototype.filterRequest = function(context) {
     // Probabalistically let the request through
     var entry = this.domCache.lookup(context);
     if ( entry !== undefined ) {
-        return entry.result;
+        result = entry.result;
+        this.netFilteringCache.add(context, result);
+        return result;
     }
 
-    /*
-    var setting = µb.userSettings.largeMediaSize;
-    var thresh = setting + (100-setting)*(setting/110.0)
-    if ( setting === 100 || 100*Math.random() >= (100-thresh) ) {
-        result = '';
-    }
-    */
     if ( 100*Math.random() >= (100-µb.userSettings.largeMediaSize ) ) {
         result = '';
     }
 
-    this.netFilteringCache.add(context, result);
     this.domCache.add(context, result);
+    this.netFilteringCache.add(context, result);
 
     return result;
 };
@@ -861,26 +856,20 @@ PageStore.prototype.filterRequestNoCache = function(context) {
         }
     }
 
-    // HERE
     // Probabalistically let the request through
     var entry = this.domCache.lookup(context);
     if ( entry !== undefined ) {
-        return entry.result;
+        result = entry.result;
+        this.netFilteringCache.add(context, result);
+        return result;
     }
 
-    /*
-    var setting = µb.userSettings.largeMediaSize;
-    var thresh = setting + (100-setting)*(setting/110.0)
-    if ( setting === 100 || 100*Math.random() >= (100-thresh) ) {
-        result = '';
-    }
-    */
     if ( 100*Math.random() >= (100-µb.userSettings.largeMediaSize ) ) {
         result = '';
     }
 
-    this.netFilteringCache.add(context, result);
     this.domCache.add(context, result);
+    this.netFilteringCache.add(context, result);
 
     return result;
 };
